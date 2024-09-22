@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./index.css";
+import Cookies from "js-cookie";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [isRegister, setIsRegister] = useState(false);
@@ -10,21 +12,37 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
-
+  const navigate = useNavigate();
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetch("/test");
-      if (response.ok) {
-        const data = await response.text();
-        console.log(data);
-      }
-    };
-    fetchData();
-  }, []);
+    const jwt = Cookies.get("jwtToken");
+    if (jwt !== undefined) {
+      navigate("/");
+    } else {
+      const fetchData = async () => {
+        const response = await fetch("/test");
+        if (response.ok) {
+          const data = await response.text();
+          console.log(data);
+        }
+      };
+      fetchData();
+    }
+  }, [navigate]);
 
   const toggleForm = (event) => {
     event.preventDefault();
     setIsRegister(!isRegister);
+    clearFields();
+  };
+
+  const clearFields = () => {
+    setFirstName("");
+    setLastName("");
+    setMobileNumber("");
+    setRegisterEmail("");
+    setRegisterPassword("");
+    setEmail("");
+    setPassword("");
   };
 
   const handleSubmit = async (event) => {
@@ -33,10 +51,11 @@ const Login = () => {
       const registerData = {
         firstName,
         lastName,
-        registerEmail,
-        registerPassword,
+        email: registerEmail,
+        password: registerPassword,
         mobileNumber,
       };
+
       const options = {
         method: "POST",
         headers: {
@@ -44,18 +63,46 @@ const Login = () => {
         },
         body: JSON.stringify(registerData),
       };
-      const response = await fetch("/register", options);
+
+      const response = await fetch("http://localhost:4000/register", options);
       if (response.ok) {
-        const data = await response.JSON();
-        console.log(data.message);
+        const data = await response.json();
+        alert(data.message);
+        clearFields();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message);
       }
     } else {
-      console.log("Logging in with:", { email, password });
+      const loginingData = {
+        email,
+        password,
+      };
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify(loginingData),
+      };
+      const response = await fetch("http://localhost:4000/login", options);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data.jwtToken);
+        Cookies.set("jwtToken", data.jwtToken, {
+          expires: 30,
+        });
+
+        clearFields();
+        navigate("/");
+      } else {
+        alert("login failed");
+      }
     }
   };
 
   return (
-    <div className="login-container">
+    <div className="login-container login-main-page ">
       <div className="login-box">
         <h2 className="login-title">{isRegister ? "Register" : "Login"}</h2>
         <form className="login-form" onSubmit={handleSubmit}>
@@ -67,6 +114,7 @@ const Login = () => {
                 placeholder="First Name"
                 onChange={(e) => setFirstName(e.target.value)}
                 value={firstName}
+                required
               />
               <input
                 className="input-field"
@@ -74,6 +122,7 @@ const Login = () => {
                 placeholder="Last Name"
                 onChange={(e) => setLastName(e.target.value)}
                 value={lastName}
+                required
               />
               <input
                 className="input-field"
@@ -81,6 +130,7 @@ const Login = () => {
                 placeholder="Mobile Number"
                 onChange={(e) => setMobileNumber(e.target.value)}
                 value={mobileNumber}
+                required
               />
               <input
                 className="input-field"
@@ -95,6 +145,7 @@ const Login = () => {
                 type="password"
                 placeholder="Register Password"
                 onChange={(e) => setRegisterPassword(e.target.value)}
+                value={registerPassword}
                 required
               />
             </>
@@ -114,11 +165,12 @@ const Login = () => {
                 type="password"
                 placeholder="Password"
                 onChange={(e) => setPassword(e.target.value)}
+                value={password}
                 required
               />
             </>
           )}
-          <button className="submit-btn">
+          <button className="submit-btn" type="submit">
             {isRegister ? "Register" : "Login"}
           </button>
         </form>

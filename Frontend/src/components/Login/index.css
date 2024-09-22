@@ -1,12 +1,10 @@
-/* Reset some basic elements */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body,
-html {
+.login-main-page {
   height: 100%;
   display: flex;
   justify-content: center;
@@ -15,7 +13,6 @@ html {
   font-family: "Arial", sans-serif;
 }
 
-/* Centralized container */
 .login-container {
   display: flex;
   justify-content: center;
